@@ -115,12 +115,14 @@ namespace IngameScript
                 this.broadcastTag = broadcastTag;
                 this.maxRaycastDistance = maxRaycastDistance;
                 this.raycastDistanceGrowthSpeed = raycastDistanceGrowthSpeed;
-
+                
+//inialize the "physical" components of the radar
                 azimuthRotor = (IMyMotorStator)program.GridTerminalSystem.GetBlockWithName("Azimuth Rotor " + number);
                 elevationRotor = (IMyMotorStator)program.GridTerminalSystem.GetBlockWithName("Elevation Rotor " + number);
                 laserController = (IMyShipController)program.GridTerminalSystem.GetBlockWithName("Laser Controller " + number);
                 program.GridTerminalSystem.GetBlockGroupWithName("Camera Array " + number).GetBlocksOfType<IMyCameraBlock>(cameraArray);
-
+                
+//building a coordinate frame from the rotation point on the camera array / radar
                 rotationPointLocal = new Vector3D(0, Vector3D.TransformNormal(elevationRotor.GetPosition() - azimuthRotor.GetPosition(), MatrixD.Transpose(azimuthRotor.WorldMatrix)).Y, 0);
 
                 referenceMatrix = azimuthRotor.WorldMatrix;
@@ -132,7 +134,8 @@ namespace IngameScript
                 MatrixD.Transform(ref referenceMatrix, ref totalRotation, out referenceMatrix);
 
                 referenceMatrix.Translation = Vector3D.Transform(rotationPointLocal, azimuthRotor.WorldMatrix);
-
+                
+//find specific camera positions on the camera array
                 foreach (IMyCameraBlock camera in cameraArray)
                 {
                     camera.EnableRaycast = true;
@@ -158,7 +161,8 @@ namespace IngameScript
                 {
                     timeSinceLastTargetDetection += timeDeltaSeconds;
                 }
-
+                
+//building a coordinate frame from the rotation point on the camera array / radar
                 referenceMatrix = azimuthRotor.WorldMatrix;
 
                 Quaternion azimuthRotation = Quaternion.CreateFromAxisAngle(referenceMatrix.Up, -azimuthRotor.Angle);
@@ -169,7 +173,7 @@ namespace IngameScript
 
                 referenceMatrix.Translation = Vector3D.Transform(rotationPointLocal, azimuthRotor.WorldMatrix);
 
-
+//manual user target locking prior to target lock
                 if ((laserController.MoveIndicator.Y == -1 || (timeSinceLastTargetDetection > 5 && raycastsSinceLastTargetDetection >= 5)) && !lockedTarget.IsEmpty())
                 {
                     lockedTarget = emptyTarget;
@@ -193,7 +197,8 @@ namespace IngameScript
                     raycastDirectionLocal = Vector3D.Normalize(raycastVectorLocal);
                     raycastDistance = raycastVectorLocal.Length();
                 }
-
+                
+//timing the raycast firings to maintain a constant polling rate
                 double raycastTimeDelta = raycastDistance / (2 * cameraArray.Count);
 
                 if (cameraArray[raycastCounter % cameraArray.Count].TimeUntilScan(raycastDistance) == 0 && timeSinceLastRaycast >= raycastTimeDelta && ((!lockedTarget.IsEmpty() && manualOverride == false) || laserController.MoveIndicator.Y == 1))
@@ -240,7 +245,7 @@ namespace IngameScript
                     }
                 }
 
-
+//predicting / tracking the locked target and controlling the rotors + transmitting the data to the missile
                 if (!lockedTarget.IsEmpty())
                 {
                     double raycastDistanceGrowth = raycastDistanceGrowthSpeed * timeSinceLastTargetDetection;
@@ -328,6 +333,7 @@ namespace IngameScript
 
         }
 
+//Code to coordinate the launch of a specific missile at a specific target in case of multiple missile and/or targeting lasers
         public class MissileLauncher
         {
             List<TargetingLaser> targetingLasers = new List<TargetingLaser>();
