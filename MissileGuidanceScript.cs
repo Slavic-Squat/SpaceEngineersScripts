@@ -129,6 +129,7 @@ namespace IngameScript
             }
         }
 
+//Proportial Navigation code for missile navigation
         public class MissileGuidance
         {
             int maxSpeed = 500;
@@ -171,6 +172,8 @@ namespace IngameScript
                 double proNavAccelerationMagnitude = proNavAcceleration.Length();
 
                 Vector3D accelerationAlongVelocity;
+
+//check if the desired acceleration provided by pro-nav can be achieved via the side thrusters of the missile. if not use the rear thruster as well as the side thruster
                 if (proNavAccelerationMagnitude < maxRadialAccel)
                 {
                     double accelerationAlongVelocityMagnitude = maxForwardAccel;
@@ -204,7 +207,7 @@ namespace IngameScript
                 totalAcceleration = accelerationAlongVelocity + proNavAcceleration;
             }
         }
-
+//Code to control the "physical" components of the missile
         public class MissileControl
         {
             Program program;
@@ -286,7 +289,7 @@ namespace IngameScript
                     program.GridTerminalSystem.GetBlockGroupWithName("Payload " + number).GetBlocksOfType(payload);
                     program.GridTerminalSystem.GetBlockGroupWithName("Attachment Rotors " + number).GetBlocksOfType(attachmentRotors);
                 }
-
+//find all the thrusters on the missile, their max thrusts and direction
                 foreach (IMyThrust thruster in thrusters)
                 {
                     Vector3D localThrusterDirection = Vector3D.Round(Vector3D.TransformNormal(thruster.WorldMatrix.Backward, MatrixD.Transpose(remoteControl.WorldMatrix)), 1);
@@ -343,7 +346,8 @@ namespace IngameScript
 
                     missilePosition = remoteControl.CubeGrid.GetPosition();
                     missileVelocity = remoteControl.GetShipVelocities().LinearVelocity;
-
+                    
+//recieve target data from the off-missile targeting solution
                     if (myBroadcastListener.HasPendingMessage)
                     {
                         MyIGCMessage message = myBroadcastListener.AcceptMessage();
@@ -360,6 +364,7 @@ namespace IngameScript
                     closingSpeed = Vector3D.Dot(relativeTargetPosition.Normalized(), closingVelocity.Normalized()) * closingVelocity.Length();
                     timeToTarget = distanceToTarget / closingSpeed;
 
+//staging for the missile for coordinated launching and flying
                     switch (stage)
                     {
                         case Stage.Idle:
@@ -425,6 +430,8 @@ namespace IngameScript
                             break;
                     }
 
+//using the gyros to align the missile to the desired vector
+
                     double pitchError = Math.Atan2(localVectorToAlign.Y, -localVectorToAlign.Z);
                     double yawError = Math.Atan2(localVectorToAlign.X, -localVectorToAlign.Z);
 
@@ -434,7 +441,7 @@ namespace IngameScript
                         gyro.Yaw = (float)yawController.Run((float)yawError, timeDelta);
                     }
 
-
+//firing the correct thrusters at balanced magnitudes to achieve the desired total acceleration
                     foreach (KeyValuePair<IMyThrust, MyTuple<Vector3D, Direction>> thruster in thrusterInfo)
                     {
                         double maxAccel = 0;
