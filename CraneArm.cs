@@ -92,7 +92,8 @@ namespace IngameScript
                 this.segmentOneBaseLength = segmentOneBaseLength;
                 this.segmentTwoBaseLength = segmentTwoBaseLength;
                 this.controller = controller;
-
+                
+//initialize the "phyiscal" components of the arm
                 program.GridTerminalSystem.GetBlockGroupWithName($"Crane Pistons {ID}").GetBlocksOfType(pistons);
                 baseRotor = (IMyMotorAdvancedStator)program.GridTerminalSystem.GetBlockWithName($"Crane Base Rotor {ID}");
                 segmentOneRotor = (IMyMotorAdvancedStator)program.GridTerminalSystem.GetBlockWithName($"Crane Segment One Rotor {ID}");
@@ -102,6 +103,7 @@ namespace IngameScript
                 this.sensitivity = sensitivity;
                 this.speed = speed;
 
+//find the initial extension and max extension of the arm's pistons
                 foreach (IMyPistonBase piston in pistons)
                 {
                     currentExtension += piston.CurrentPosition;
@@ -110,6 +112,7 @@ namespace IngameScript
 
                 desiredExtension = currentExtension;
 
+//find the initial arm lengths and end effector position
                 double segmentOneLength = segmentOneBaseLength;
                 double segmentTwoLength = segmentTwoBaseLength + currentExtension;
 
@@ -143,6 +146,7 @@ namespace IngameScript
                 maxArmLength = segmentOneLength + segmentTwoLength;
                 minArmLength = Math.Abs(segmentTwoLength - segmentOneLength) + 1;
 
+//read user inputs and adjust XYZ Coordinate target
                 if (controller.MoveIndicator.Z != 0)
                 {
                     ZCoord += sensitivity * controller.MoveIndicator.Z;
@@ -190,7 +194,7 @@ namespace IngameScript
                         XCoord = Math.Sqrt(minArmLength * minArmLength - YCoord * YCoord - ZCoord * ZCoord) * Math.Sign(XCoord);
                     }
                 }
-
+//read user input and adjust arm piston extension
                 if (controller.RollIndicator != 0)
                 {
                     desiredExtension += 0.25 * sensitivity * controller.RollIndicator;
@@ -239,6 +243,8 @@ namespace IngameScript
 
                 }
 
+//read user input and adjust end effector rotor rotation
+
                 if (controller.RotationIndicator.X != 0)
                 {
                     endEffectorHinge.TargetVelocityRad = (float)(0.1 * speed * controller.RotationIndicator.X);
@@ -248,6 +254,7 @@ namespace IngameScript
                     endEffectorHinge.TargetVelocityRad = 0;
                 }
 
+//find desired angles for each rotor of the robotic arm and adjust the rotors to match. 
                 baseRotorAngle = baseRotorInverted ? 2 * Math.PI - baseRotor.Angle : baseRotor.Angle;
                 segmentOneRotorAngle = segmentOneRotorInverted ? 2 * Math.PI - segmentOneRotor.Angle : segmentOneRotor.Angle;
                 segmentTwoRotorAngle = segmentTwoRotorInverted ? 2 * Math.PI - segmentTwoRotor.Angle : segmentTwoRotor.Angle;
