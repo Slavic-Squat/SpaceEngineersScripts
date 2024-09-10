@@ -2,7 +2,8 @@
 A Collection of Space Engineers Scripts
 
 All scripts have been moved to separate repositories.
-\n Missile Scripts:
+
+Missile Scripts:
 - https://github.com/Slavic-Squat/MissileControl
 - https://github.com/Slavic-Squat/MissileLauncher-Radar
 
